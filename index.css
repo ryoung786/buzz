@@ -1,0 +1,7 @@
+#answer_form {
+    display: none;
+}
+
+#buzz_btn {
+    disabled: true;
+}
