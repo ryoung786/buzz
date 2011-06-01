@@ -55,7 +55,7 @@ socket.on('connection', function(client){
 
     client.on('disconnect', function(){
 		delete(clients[''+client.sessionId]);
-		var data = { action: 'left', id: client.sessionId, all: Object.keys(clients) }
+		var data = { action: 'left', id: client.sessionId, all: Object.keys(clients) };
 		socket.broadcast(data);
         return true;
     });
