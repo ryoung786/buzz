@@ -26,6 +26,9 @@ $(function() {
 		case 'time_up':
 			handleTimeUp();
 			break;
+        case 'new_question':
+            handleNewQuestion(data);
+            break;
 		default:
 			break;
 		}
@@ -60,6 +63,12 @@ $(function() {
 	var handleJoined = function(data) {
 		console.log(data.id + " joined the game");
 	};
+
+    var handleNewQuestion = function(data) {
+		$("#answer_form").hide();
+		$("#buzz_btn").removeAttr('disabled').show().focus();
+        $('div.question p').replaceWith('<p>' + data.question + '</p>');;
+    };
 
 
     // form handlers

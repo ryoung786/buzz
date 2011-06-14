@@ -1,6 +1,7 @@
 var http = require('http');
 var io = require('socket.io');
 var game_states = require('./game_states');
+var mongodb = require('mongodb');
 
 var server = http.createServer(function(req, res){
     res.writeHead(200, {'Content-Type': 'text/html'});
@@ -35,6 +36,8 @@ socket.on('connection', function(client){
 
 	if (Object.keys(clients).length == 1) {
 		askQuestion();
+	} else {
+		client.send({action: 'new_question', question: current_question.question});
 	}
 
     client.on('message', function(message){
@@ -63,6 +66,14 @@ socket.on('connection', function(client){
 
 function validateAnswer(given) {
     return given == current_question.answer;
+}
+
+function connectdb(callback) {
+    var server = new mongodb.Server("127.0.0.1", 27017, {});
+    new mongodb.Db('buzz', server, {}).open(function (error, client) {
+		if (error) throw error;
+		callback(client);
+	});
 }
 
 function handleAnswer(data, client) {
@@ -117,12 +128,28 @@ function handleBuzz(client) {
 function startCountdown() { // make a class for this?
     buzz_timeout = setTimeout(function() {
         socket.broadcast({ action: 'time_up' });
-		askQuestion();
+		if (++answer_tries > 2) {
+			answer_tries = 0;
+			askQuestion();
+		} else {
+			game_state = game_states.ASKING_QUESTION;
+		}
     }, 5000);
 }
 
 function askQuestion() {
 	game_state = game_states.ASKING_QUESTION;
-    current_question = questions[Math.floor(Math.random()*questions.length)];
-    socket.broadcast({action: 'new_question', question: current_question.question});
+	
+    var server = new mongodb.Server("127.0.0.1", 27017, {});
+    new mongodb.Db('buzz', server, {}).open(function (error, client) {
+        if (error) throw error;
+        var collection = new mongodb.Collection(client, 'questions');
+		collection.count({}, function(err, count) {
+			var offset = Math.floor(Math.random()*count)
+			collection.find({}, {limit: 1, skip: offset}).toArray(function(err, docs) {
+				current_question = docs[0];
+				socket.broadcast({action: 'new_question', question: current_question.question});
+			});
+		});
+    });
 }
