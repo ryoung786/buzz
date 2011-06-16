@@ -27,7 +27,7 @@ Game.prototype = {
                 // raise new question event for docs[i]
             });
         });
-    }
+    },
 
 	playerAnswered : function(data, player_id) {
 		if (this.state != WAITING_FOR_ANSWER) {
