@@ -141,20 +141,3 @@ function startCountdown() { // make a class for this?
         }
     }, 5000);
 }
-
-function askQuestion() {
-    game_state = game_states.ASKING_QUESTION;
-
-    var server = new mongodb.Server("127.0.0.1", 27017, {});
-    new mongodb.Db('buzz', server, {}).open(function (error, client) {
-        if (error) throw error;
-        var collection = new mongodb.Collection(client, 'questions');
-        collection.count({}, function(err, count) {
-            var offset = Math.floor(Math.random()*count)
-            collection.find({}, {limit: 1, skip: offset}).toArray(function(err, docs) {
-                current_question = docs[0];
-                socket.broadcast({action: 'new_question', question: current_question.question});
-            });
-        });
-    });
-}
