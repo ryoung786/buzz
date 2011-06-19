@@ -4,7 +4,7 @@ import urllib2, re
 from BeautifulSoup import BeautifulSoup
 from pymongo.connection import Connection
 
-x = urllib2.urlopen('http://www.j-archive.com/showgame.php?game_id=3046')
+x = urllib2.urlopen('http://www.j-archive.com/showgame.php?game_id=3622')
 soup = BeautifulSoup(x.read())
 questions = [i.string for i in soup.findAll('td', 'clue_text')]
 

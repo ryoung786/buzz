@@ -8,6 +8,7 @@ Game = function(id){
     this.players = {}; // session_id -> player object
     this.question;
     this.current_buzz;
+    this.incorrect_answers = 0;
     this.db = new mongodb.Server("127.0.0.1", 27017, {});
 };
 
@@ -16,9 +17,7 @@ Game.prototype = new events.EventEmitter();
 methods = {
     addNewPlayer : function(session_id) {
         this.players[session_id] = 1;
-        console.log('we now have ' + Object.keys(this.players).length + ' players in game ' + this.id);
         if (Object.keys(this.players).length == 1) {
-            // ask a question?  sure why not
             this.askNewQuestion();
         }
         return this.players;
@@ -31,6 +30,8 @@ methods = {
 
     askNewQuestion : function() {
         var self = this;
+        this.question = null;
+        this.incorrect_answers = 0;
         new mongodb.Db('buzz', this.db, {}).open(function (err, client) {
             if (err) throw err;
             var coll = new mongodb.Collection(client, 'questions');
@@ -63,14 +64,25 @@ methods = {
         console.log(data);
         var correct = this.isCorrect(data.value, this.question.answer);
         if (correct) {
-            this.emit('correctAnswer');
+            this.emit('correctAnswer', data.value);
             this.askNewQuestion();
         } else {
-            this.emit('incorrectAnswer');
-            this.incorrect_answers++;
-            if (this.incorrect_answers > 2) {
-                this.askNewQuestion();
+            this.emit('incorrectAnswer', data.value);
+            this.incorrectAnswer(data.value, false);
+        }
+    },
+
+    incorrectAnswer : function(wrong_answer, time_up) {
+        this.incorrect_answers++;
+        if (this.incorrect_answers > 2) {
+            var answer = this.question.answer;
+            if (this.question.answer instanceof Array) {
+                answer = answer[0];
             }
+            this.emit('revealAnswer', answer);
+            this.askNewQuestion();
+        } else {
+            this.state = gs.ASKING_QUESTION;
         }
     },
 
@@ -79,6 +91,7 @@ methods = {
         clearTimeout(this.buzz_timeout);
         this.buzz_timeout = setTimeout(function() {
             self.emit('timesUpOnBuzz', self.current_buzz);
+            self.incorrectAnswer('', true);
         }, 5000);
     },
 
@@ -92,11 +105,12 @@ methods = {
     isCorrect : function(given_answer, answer) {
         given_answer = given_answer.toLowerCase();
         if (answer instanceof Array) {
-            if (ans.indexOf(given_answer) >= 0) { return true; }
+            for (i=0; i<answer.length; i++) { answer[i] = answer[i].toLowerCase(); }
+            if (answer.indexOf(given_answer) >= 0) { return true; }
             var x = parseInt(given_answer);
-            return !isNaN(x) && ans.indexOf(x) >= 0;
+            return !isNaN(x) && answer.indexOf(x) >= 0;
         }
-        return given_answer == current_question.answer;
+        return given_answer == answer.toLowerCase();
     },
 
     verifyState : function(state) {

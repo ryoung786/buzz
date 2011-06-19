@@ -54,10 +54,15 @@ function registerGameCallbacks(game) {
         socket.broadcast(data);
     });
 
-    game.on('timesUpOnBuzz', function(answer) {
+    game.on('revealAnswer', function(answer, time_up) {
+        var data = { action: 'reveal_answer', answer: answer, time_up: time_up };
+        socket.broadcast(data);
+    });
+
+    game.on('timesUpOnBuzz', function(session_id) {
         var data = { action: 'answer', answer: '', correct: false };
         socket.broadcast(data);
-    });    
+    });
 }
 
 function handleJoin(data, client) {
