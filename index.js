@@ -3,6 +3,7 @@ $(function() {
     var socket = new io.Socket('localhost', { port: 8080 });
     socket.on('connect', function(){
         console.log('connected');
+        socket.send({action: 'join', game_id: 1 });
     });
     socket.on('disconnect', function(){
         console.log('disconnected');
@@ -73,11 +74,11 @@ $(function() {
 
     // form handlers
     $('#buzz_btn').click(function() {
-		socket.send({action: 'buzz'});
+		socket.send({action: 'buzz', game_id: 1});
     });
 
 	$('#answer_btn').click(function() {
-		socket.send({action: 'answer',
+		socket.send({action: 'answer', game_id: 1,
 					 value: $('#answer_txt').val()
 					});
 	});
